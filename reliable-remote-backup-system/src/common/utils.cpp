@@ -186,6 +186,13 @@ std::string toLower(const std::string& str) {
 
 std::vector<std::string> split(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
+    
+    // Handle empty string case - should return vector with one empty string
+    if (str.empty()) {
+        tokens.push_back("");
+        return tokens;
+    }
+    
     std::stringstream ss(str);
     std::string token;
     while (std::getline(ss, token, delimiter)) {
