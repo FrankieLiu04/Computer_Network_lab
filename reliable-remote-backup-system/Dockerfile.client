@@ -1,0 +1,37 @@
+# =============================================================================
+# Dockerfile for Backup Client
+# Separate Dockerfile for client-side testing
+# =============================================================================
+
+FROM ubuntu:22.04 AS builder
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY . .
+
+RUN mkdir -p build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    cmake --build . --parallel $(nproc)
+
+FROM ubuntu:22.04 AS runtime
+
+RUN apt-get update && apt-get install -y \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash backup
+RUN mkdir -p /app/files && chown -R backup:backup /app
+
+WORKDIR /app
+
+COPY --from=builder /app/build/backup-client /app/
+RUN chown backup:backup /app/backup-client && chmod +x /app/backup-client
+
+USER backup
+
+# Default command (override with docker run)
+CMD ["./backup-client", "-address", "backup-server", "-port", "35887"]

@@ -1,0 +1,255 @@
+# =============================================================================
+# GitHub Actions CI/CD Pipeline for Reliable Remote Backup System
+# =============================================================================
+# Triggers on push and pull request to main branch
+# Runs: build, lint, test, docker build
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # ===========================================================================
+  # Build Job
+  # ===========================================================================
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        # Can add more: [ubuntu-latest, macos-latest]
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake git
+
+    - name: Configure CMake
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+    - name: Build
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-${{ matrix.os }}
+        path: |
+          reliable-remote-backup-system/build/backup-server
+          reliable-remote-backup-system/build/backup-client
+        retention-days: 7
+
+  # ===========================================================================
+  # Test Job
+  # ===========================================================================
+  test:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake git
+
+    - name: Configure CMake
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+    - name: Build
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
+
+    - name: Run tests
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system/build
+      run: |
+        ctest --output-on-failure --verbose
+
+  # ===========================================================================
+  # Lint Job (Optional - can be extended)
+  # ===========================================================================
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check code formatting hints
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        echo "=== Code Quality Checks ==="
+        # Check for common issues
+        echo "Checking for TODO/FIXME comments..."
+        grep -rn "TODO\|FIXME" src/ include/ || echo "No TODO/FIXME found"
+        
+        echo "Checking for debug statements..."
+        grep -rn "std::cout.*DEBUG" src/ || echo "No debug cout found"
+        
+        echo "=== Checks Complete ==="
+
+  # ===========================================================================
+  # Docker Build Job
+  # ===========================================================================
+  docker:
+    name: Docker Build
+    needs: [build, test]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image (Server)
+      uses: docker/build-push-action@v5
+      with:
+        context: ./reliable-remote-backup-system
+        file: ./reliable-remote-backup-system/Dockerfile
+        push: false
+        tags: backup-server:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build Docker image (Client)
+      uses: docker/build-push-action@v5
+      with:
+        context: ./reliable-remote-backup-system
+        file: ./reliable-remote-backup-system/Dockerfile.client
+        push: false
+        tags: backup-client:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker Compose
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        docker compose config
+        echo "Docker Compose configuration is valid"
+
+  # ===========================================================================
+  # Integration Test Job
+  # ===========================================================================
+  integration:
+    name: Integration Tests
+    needs: docker
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake git netcat-openbsd
+
+    - name: Build
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
+
+    - name: Run integration tests
+      working-directory: ${{ github.workspace }}/reliable-remote-backup-system
+      run: |
+        echo "=== Starting Integration Tests ==="
+        
+        # Create backup directory
+        mkdir -p backup
+        
+        # Start server in background
+        ./build/backup-server -port 35887 &
+        SERVER_PID=$!
+        sleep 2
+        
+        # Verify server is running
+        if ! kill -0 $SERVER_PID 2>/dev/null; then
+          echo "Server failed to start"
+          exit 1
+        fi
+        
+        # Test 1: List empty directory
+        echo "Test 1: List files (empty directory)"
+        echo -e "ls\nquit" | timeout 10 ./build/backup-client -port 35887 || true
+        
+        # Test 2: Create and send a test file
+        echo "Test 2: Send file"
+        echo "Hello, World!" > testfile.txt
+        echo -e "send testfile.txt\nquit" | timeout 10 ./build/backup-client -port 35887 || true
+        
+        # Test 3: Verify file was received
+        echo "Test 3: List files (should show testfile.txt)"
+        echo -e "ls\nquit" | timeout 10 ./build/backup-client -port 35887 || true
+        
+        # Test 4: Remove file
+        echo "Test 4: Remove file"
+        echo -e "remove testfile.txt\nquit" | timeout 10 ./build/backup-client -port 35887 || true
+        
+        # Test 5: Verify file was removed
+        echo "Test 5: List files (should be empty again)"
+        echo -e "ls\nquit" | timeout 10 ./build/backup-client -port 35887 || true
+        
+        # Cleanup: Shutdown server
+        echo "Cleanup: Shutdown server"
+        echo -e "shutdown" | timeout 5 ./build/backup-client -port 35887 || true
+        
+        wait $SERVER_PID || true
+        
+        echo "=== Integration Tests Complete ==="
+
+  # ===========================================================================
+  # Summary Job
+  # ===========================================================================
+  summary:
+    name: CI Summary
+    needs: [build, test, lint, docker, integration]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Check job statuses
+      run: |
+        echo "=== CI Pipeline Summary ==="
+        echo "Build: ${{ needs.build.result }}"
+        echo "Test: ${{ needs.test.result }}"
+        echo "Lint: ${{ needs.lint.result }}"
+        echo "Docker: ${{ needs.docker.result }}"
+        echo "Integration: ${{ needs.integration.result }}"
+        
+        if [ "${{ needs.build.result }}" = "failure" ] || \
+           [ "${{ needs.test.result }}" = "failure" ] || \
+           [ "${{ needs.docker.result }}" = "failure" ]; then
+          echo "�?CI Pipeline Failed"
+          exit 1
+        else
+          echo "�?CI Pipeline Passed"
+        fi

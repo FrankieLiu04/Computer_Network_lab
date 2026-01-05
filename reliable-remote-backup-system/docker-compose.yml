@@ -1,0 +1,89 @@
+# =============================================================================
+# Docker Compose for Reliable Remote Backup System
+# =============================================================================
+# Usage:
+#   docker compose up -d          # Start services
+#   docker compose logs -f        # View logs
+#   docker compose down           # Stop services
+#   docker compose build          # Rebuild images
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backup Server
+  # ---------------------------------------------------------------------------
+  backup-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backup-server
+    hostname: backup-server
+    ports:
+      # UDP command port
+      - "35887:35887/udp"
+      # TCP file transfer ports
+      - "40000-40010:40000-40010/tcp"
+    volumes:
+      # Persistent backup storage
+      - backup-data:/app/backup
+      # Logs (optional, for debugging)
+      - backup-logs:/app/logs
+    environment:
+      - TZ=Asia/Hong_Kong
+    restart: unless-stopped
+    networks:
+      - backup-network
+    healthcheck:
+      # Simple health check - verify process is running
+      test: ["CMD-SHELL", "pgrep -x backup-server || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # Backup Client (for testing)
+  # ---------------------------------------------------------------------------
+  backup-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: backup-client
+    hostname: backup-client
+    depends_on:
+      backup-server:
+        condition: service_healthy
+    volumes:
+      # Mount local files to test sending
+      - ./test-files:/app/files:ro
+    environment:
+      - TZ=Asia/Hong_Kong
+    networks:
+      - backup-network
+    # Interactive mode for CLI usage
+    stdin_open: true
+    tty: true
+    # Don't start automatically
+    profiles:
+      - client
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  backup-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  backup-data:
+    name: reliable-backup-data
+  backup-logs:
+    name: reliable-backup-logs

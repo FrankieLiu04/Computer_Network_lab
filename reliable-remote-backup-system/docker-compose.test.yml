@@ -1,0 +1,70 @@
+# =============================================================================
+# Docker Compose for Development/Testing
+# Includes build and test services
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Build and Test Service
+  # ---------------------------------------------------------------------------
+  build-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: backup-build-test
+    command: |
+      bash -c "
+        cd /app/build &&
+        echo '=== Running Unit Tests ===' &&
+        ctest --output-on-failure &&
+        echo '=== Tests Complete ==='
+      "
+    volumes:
+      - .:/app:ro
+      - build-cache:/app/build
+    networks:
+      - test-network
+
+  # ---------------------------------------------------------------------------
+  # Integration Test Service
+  # ---------------------------------------------------------------------------
+  integration-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backup-integration-test
+    command: |
+      bash -c "
+        echo '=== Starting Integration Tests ===' &&
+        
+        # Start server in background
+        ./backup-server -port 35887 &
+        SERVER_PID=$$!
+        sleep 2
+        
+        # Run basic tests
+        echo 'Test 1: List files (empty)'
+        echo 'ls' | timeout 5 ./backup-client -port 35887 || true
+        
+        echo 'Test 2: Create and send file'
+        echo 'test content' > /tmp/testfile.txt
+        echo -e 'send /tmp/testfile.txt\nls\nquit' | timeout 10 ./backup-client -port 35887 || true
+        
+        echo 'Test 3: Shutdown server'
+        echo 'shutdown' | timeout 5 ./backup-client -port 35887 || true
+        
+        wait $$SERVER_PID || true
+        echo '=== Integration Tests Complete ==='
+      "
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  build-cache:

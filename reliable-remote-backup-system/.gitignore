@@ -1,0 +1,81 @@
+# =============================================================================
+# Git Ignore for Reliable Remote Backup System
+# =============================================================================
+
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Compiled files
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+*.vcxproj*
+*.sln
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Backup directory (runtime created)
+backup/
+
+# Test files
+test-files/
+testfile*.txt
+
+# Docker volumes (local)
+docker-data/
+
+# Dependencies (fetched by CMake)
+_deps/
+
+# Coverage
+*.gcno
+*.gcda
+*.gcov
+coverage/
+coverage.info
+
+# Package files
+*.tar.gz
+*.zip
+*.deb
+*.rpm
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
