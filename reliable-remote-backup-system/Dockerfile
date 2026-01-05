@@ -34,12 +34,12 @@ FROM ubuntu:22.04 AS runtime
 RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN useradd -m -s /bin/bash backup
+# Create non-root user (check if exists first, as some base images have 'backup' user)
+RUN id -u backupapp > /dev/null 2>&1 || useradd -m -s /bin/bash backupapp
 
 # Create directories
 RUN mkdir -p /app/backup /app/logs && \
-    chown -R backup:backup /app
+    chown -R backupapp:backupapp /app
 
 WORKDIR /app
 
@@ -52,7 +52,7 @@ RUN chown backup:backup /app/backup-server /app/backup-client && \
     chmod +x /app/backup-server /app/backup-client
 
 # Switch to non-root user
-USER backup
+USER backupapp
 
 # Default command
 CMD ["./backup-server", "-port", "35887", "-backup", "/app/backup", "-log"]
