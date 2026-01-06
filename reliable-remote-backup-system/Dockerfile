@@ -7,11 +7,12 @@
 # -----------------------------------------------------------------------------
 FROM ubuntu:22.04 AS builder
 
-# Install build dependencies
+# Install build dependencies (including OpenSSL for cpp-httplib HTTPS support)
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     git \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
