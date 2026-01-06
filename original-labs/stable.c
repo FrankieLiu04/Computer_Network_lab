@@ -114,7 +114,7 @@ void ComputeChecksum(struct pkt *packet)
     unsigned int sum = 0;
     sum += packet->seqnum;
     sum += packet->acknum;
-    
+
     for(int i=0; i<20; i++) {
         sum += (unsigned char)packet->payload[i];
         if(sum & 0xFFFF0000) {
@@ -129,7 +129,7 @@ int CheckCorrupted(struct pkt packet)
     unsigned int sum = 0;
     sum += packet.seqnum;
     sum += packet.acknum;
-    
+
     for(int i=0; i<20; i++) {
         sum += (unsigned char)packet.payload[i];
         if(sum & 0xFFFF0000) {
@@ -145,10 +145,10 @@ int CheckCorrupted(struct pkt packet)
 void A_output(struct msg_ message)
 {
     struct timer *pkt_timer;
-    
+
     /* Create pkt before window is full */
     if (nextseqnum < base + WINDOWSIZE) {
-        /* 创建新数据包 */
+        /* Create new data packet */
         struct pkt packet;
         packet.seqnum = nextseqnum;
         packet.acknum = NOTUSED;
@@ -223,7 +223,7 @@ void A_input(struct pkt packet)
         return; // if no matching ACK found, just return
     }
 
-    
+
     while (pktnum > 0 && winbuf[winfront].acknum == 1 && winbuf[winfront].seqnum == base) {
         base++;
         winfront = (winfront + 1) % WINDOWSIZE;
@@ -231,7 +231,7 @@ void A_input(struct pkt packet)
         ack_adv_num++;
     }
 
-  
+
     while (msg_num > 0 && nextseqnum < base + WINDOWSIZE) {
         struct msg_ message = buffer[buffront];
         buffront = (buffront + 1) % MAXBUFSIZE;
@@ -243,11 +243,11 @@ void A_input(struct pkt packet)
         memcpy(new_pkt.payload, message.data, 20);
         ComputeChecksum(&new_pkt);
 
-        
+
         printf("[%.1f] A: send packet [%d] base [%d]\n", currenttime_(), nextseqnum, base);
         tolayer3(A, new_pkt);
         packet_sent++; // update packet sent counter
-        
+
         winbuf[winrear] = new_pkt;
         winbuf[winrear].acknum = 0; /* initializing */
         winrear = (winrear + 1) % WINDOWSIZE;
@@ -266,15 +266,15 @@ void A_input(struct pkt packet)
 void A_packet_time_rinterrupt(struct timer* pkt_timer)
 {
     packet_time_out++;
-    
+
     /* find pkt from buffer */
     int found = 0;
     for(int i=0; i<pktnum; i++) {
         if(winbuf[(winfront+i)%WINDOWSIZE].seqnum == pkt_timer->pkt_seq && winbuf[(winfront+i)%WINDOWSIZE].acknum == 0) {
-            
+
             printf("[%.1f] A: packet [%d] time_ out, resend packet\n", currenttime_(), pkt_timer->pkt_seq);
-            
-        
+
+
             tolayer3(A, winbuf[(winfront+i)%WINDOWSIZE]);
             packet_sent++; // add this line
             packet_resent++;
@@ -282,7 +282,7 @@ void A_packet_time_rinterrupt(struct timer* pkt_timer)
             break;
         }
     }
-    
+
     if(found) {
         starttime_r(pkt_timer, A, RTT);
     }
@@ -294,7 +294,7 @@ void B_input(struct pkt packet)
     static int expected_seq = 0;
     static struct pkt recv_window[8];
     static int recv_marked[8] = {0}; /* 0: not marked, 1: marked */
-    
+
     if (CheckCorrupted(packet)) {
         if (packet.seqnum == 999999) {
             printf("[%.1f] B: packet [999999] corrupted\n", currenttime_());
@@ -304,35 +304,35 @@ void B_input(struct pkt packet)
         /* remoce packet_corrupt++，since checked in tolayer3 */
         return;
     }
-    
+
     /* 2. check */
     if ((packet.seqnum >= expected_seq && packet.seqnum < expected_seq + WINDOWSIZE) ||
         (packet.seqnum < expected_seq && packet.seqnum >= expected_seq - WINDOWSIZE)) {
         int slot = packet.seqnum % WINDOWSIZE;
-        
+
         /* 3. buffer and sendACK */
         if (recv_marked[slot] == 0 || recv_window[slot].seqnum != packet.seqnum) {
             /* buffer */
             memcpy(&recv_window[slot], &packet, sizeof(struct pkt));
             recv_marked[slot] = 1;
-            
+
             /* send ack */
             struct pkt ack_pkt;
             ack_pkt.acknum = packet.seqnum;
             ack_pkt.seqnum = NOTUSED;
-            memset(ack_pkt.payload, 0, 20); /* 清空ACK包的payload */
+            memset(ack_pkt.payload, 0, 20); /* Clear ACK packet payload */
             ComputeChecksum(&ack_pkt);
             tolayer3(B, ack_pkt);
-            
+
             printf("[%.1f] B: packet [%d] received, send ACK [%d]\n", currenttime_(), packet.seqnum, packet.seqnum);
 
         }
-        
-   
-        while (recv_marked[expected_seq % WINDOWSIZE] == 1 && 
+
+
+        while (recv_marked[expected_seq % WINDOWSIZE] == 1 &&
                recv_window[expected_seq % WINDOWSIZE].seqnum == expected_seq) {
             tolayer5(B, recv_window[expected_seq % WINDOWSIZE].payload);
-            recv_marked[expected_seq % WINDOWSIZE] = 0; 
+            recv_marked[expected_seq % WINDOWSIZE] = 0;
             packet_receieve++;
             expected_seq++;
         }
@@ -344,7 +344,7 @@ void B_input(struct pkt packet)
         memset(ack_pkt.payload, 0, 20);
         ComputeChecksum(&ack_pkt);
         tolayer3(B, ack_pkt);
-        
+
 
         printf("[%.1f] B: packet [%d] received, send ACK [%d]\n", currenttime_(), packet.seqnum, packet.seqnum);
     }
@@ -381,13 +381,13 @@ void print_info() {
     printf("***********************************************************************************************************\n");
     printf("                                       Packet Transmission Summary                                         \n");
     printf("***********************************************************************************************************\n");
-    
-    /* 统计计算 - 每个包32KB，转换为Kb/s */
+
+    /* Statistics calculation - each packet is 32KB, convert to Kb/s */
     float throughput = (packet_receieve * 32.0 * 8) / currenttime_();
-    
+
     /* 正确传输的包数量应该等于总消息数量，即接收方接收到的包数量 */
     packet_correct = packet_receieve;
-    
+
     printf("From Sender to Receiver:  \n");
     printf(" total sent pkts:         %d \n", packet_sent);
     printf(" total correct pkts:      %d \n", packet_correct);
@@ -549,19 +549,19 @@ void init()                         /* initialize the simulator */
 //    float jimsrand();
 
     printf("Enter the number of messages to simulate: \n");
- 
+
     scanf("%d", &nsimmax);
     total_sim_msg = nsimmax * 32;
     printf("Enter time_ between messages from sender's layer5 [ > 0.0]:\n");
 
     scanf("%f", &lambda);
     printf("Enter channel pattern string\n");
-  
+
     scanf("%s", pattern);
     npttns = strlen(pattern);
 
     printf("Enter sender's window size\n");
-    
+
     scanf("%d", &WINDOWSIZE);
     winbuf = (struct pkt *) malloc(sizeof(struct pkt) * WINDOWSIZE);
 

@@ -1,0 +1,52 @@
+# EditorConfig helps maintain consistent coding styles across different editors
+# https://editorconfig.org
+
+root = true
+
+# Default settings (applies to all files)
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# C/C++ files
+[*.{c,cc,cpp,h,hpp}]
+indent_size = 4
+
+# CMake files
+[CMakeLists.txt]
+indent_size = 4
+
+[*.cmake]
+indent_size = 4
+
+# Markdown files (preserve trailing spaces for line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+
+# Batch scripts
+[*.bat]
+end_of_line = crlf
+
+# Makefile (must use tabs)
+[Makefile]
+indent_style = tab
+
+# Docker files
+[Dockerfile*]
+indent_size = 4

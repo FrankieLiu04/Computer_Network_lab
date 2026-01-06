@@ -1,8 +1,8 @@
-# IDE 个人化配置
+# IDE personal configurations
 .vscode/
 *.code-workspace
 
-# OS 文件
+# OS files
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -10,15 +10,15 @@ desktop.ini
 *.swo
 *~
 
-# 构建产物（如果根目录构建）
+# Build artifacts (if built in root directory)
 build/
 out/
 bin/
 dist/
 
-# 日志
+# Logs
 *.log
 
-# 临时文件
+# Temporary files
 *.tmp
 *.temp
