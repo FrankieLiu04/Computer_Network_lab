@@ -1,33 +1,33 @@
-## 📋 PR 描述
-简要描述这个 PR 做了什么。
+## 📋 PR Description
+Briefly describe what this PR does.
 
-## 🔗 关联 Issue
-Closes #(issue编号)
+## 🔗 Related Issue
+Closes #(issue number)
 
-## 🔄 变更类型
-请勾选适用的选项：
+## 🔄 Change Type
+Please check the applicable options:
 
-- [ ] 🐛 Bug 修复 (fix)
-- [ ] ✨ 新功能 (feat)
-- [ ] 📝 文档更新 (docs)
-- [ ] 🎨 代码格式/风格 (style)
-- [ ] ♻️ 代码重构 (refactor)
-- [ ] ✅ 测试相关 (test)
-- [ ] 🔧 构建/配置 (chore)
+- [ ] 🐛 Bug fix (fix)
+- [ ] ✨ New feature (feat)
+- [ ] 📝 Documentation update (docs)
+- [ ] 🎨 Code format/style (style)
+- [ ] ♻️ Code refactoring (refactor)
+- [ ] ✅ Test related (test)
+- [ ] 🔧 Build/configuration (chore)
 
-## 📝 变更详情
-- 变更点 1
-- 变更点 2
+## 📝 Change Details
+- Change 1
+- Change 2
 
-## ✅ 自检清单
-- [ ] 代码可以正常编译
-- [ ] 所有测试通过
-- [ ] 已添加必要的测试
-- [ ] 已更新相关文档
-- [ ] Commit 消息符合规范
+## ✅ Self-Check List
+- [ ] Code compiles successfully
+- [ ] All tests pass
+- [ ] Necessary tests added
+- [ ] Related documentation updated
+- [ ] Commit messages follow conventions
 
-## 🧪 测试说明
-描述如何测试这些变更。
+## 🧪 Testing Instructions
+Describe how to test these changes.
 
-## 📷 截图（如适用）
-UI 变更的截图。
+## 📷 Screenshots (if applicable)
+Screenshots of UI changes.

@@ -1,63 +1,63 @@
-# Clang-Format 配置文件
-# 基于 Google C++ 风格，适度调整
+# Clang-Format configuration file
+# Based on Google C++ style with moderate adjustments
 
 Language: Cpp
 BasedOnStyle: Google
 
-# 缩进
+# Indentation
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 AccessModifierOffset: -4
 
-# 行宽
+# Line width
 ColumnLimit: 100
 
-# 大括号
+# Braces
 BreakBeforeBraces: Attach
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortBlocksOnASingleLine: Empty
 
-# 指针和引用对齐
+# Pointer and reference alignment
 PointerAlignment: Left
 ReferenceAlignment: Left
 
-# 包含文件排序
+# Include file sorting
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeCategories:
-  # 1. 本项目头文件
+  # 1. Project headers
   - Regex: '^"(client|server|common|protocol)/'
     Priority: 1
-  # 2. 第三方库
+  # 2. Third-party libraries
   - Regex: '^<.*\.h>'
     Priority: 2
-  # 3. C++ 标准库
+  # 3. C++ standard library
   - Regex: '^<.*>'
     Priority: 3
 
-# 命名空间
+# Namespace
 NamespaceIndentation: None
 CompactNamespaces: false
 FixNamespaceComments: true
 
-# 对齐
+# Alignment
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignOperands: true
 AlignTrailingComments: true
 
-# 换行
+# Line breaking
 AllowAllParametersOfDeclarationOnNextLine: true
 BinPackArguments: true
 BinPackParameters: true
 BreakConstructorInitializers: BeforeColon
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 
-# 空格
+# Spacing
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true
@@ -66,10 +66,10 @@ SpacesInAngles: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 
-# C++11 特性
+# C++11 features
 Standard: c++17
 Cpp11BracedListStyle: true
 
-# 注释
+# Comments
 ReflowComments: true
 SpacesBeforeTrailingComments: 2
