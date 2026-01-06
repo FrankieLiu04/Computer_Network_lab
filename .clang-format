@@ -1,0 +1,75 @@
+# Clang-Format 配置文件
+# 基于 Google C++ 风格，适度调整
+
+Language: Cpp
+BasedOnStyle: Google
+
+# 缩进
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+
+# 行宽
+ColumnLimit: 100
+
+# 大括号
+BreakBeforeBraces: Attach
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Empty
+
+# 指针和引用对齐
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# 包含文件排序
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # 1. 本项目头文件
+  - Regex: '^"(client|server|common|protocol)/'
+    Priority: 1
+  # 2. 第三方库
+  - Regex: '^<.*\.h>'
+    Priority: 2
+  # 3. C++ 标准库
+  - Regex: '^<.*>'
+    Priority: 3
+
+# 命名空间
+NamespaceIndentation: None
+CompactNamespaces: false
+FixNamespaceComments: true
+
+# 对齐
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands: true
+AlignTrailingComments: true
+
+# 换行
+AllowAllParametersOfDeclarationOnNextLine: true
+BinPackArguments: true
+BinPackParameters: true
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+# 空格
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesInAngles: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# C++11 特性
+Standard: c++17
+Cpp11BracedListStyle: true
+
+# 注释
+ReflowComments: true
+SpacesBeforeTrailingComments: 2

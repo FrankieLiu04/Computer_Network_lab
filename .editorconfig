@@ -1,0 +1,52 @@
+# EditorConfig 帮助开发者在不同编辑器间保持一致的编码风格
+# https://editorconfig.org
+
+root = true
+
+# 默认设置（适用于所有文件）
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# C/C++ 文件
+[*.{c,cc,cpp,h,hpp}]
+indent_size = 4
+
+# CMake 文件
+[CMakeLists.txt]
+indent_size = 4
+
+[*.cmake]
+indent_size = 4
+
+# Markdown 文件（保留尾部空格用于换行）
+[*.md]
+trim_trailing_whitespace = false
+
+# YAML 文件
+[*.{yml,yaml}]
+indent_size = 2
+
+# JSON 文件
+[*.json]
+indent_size = 2
+
+# Shell 脚本
+[*.sh]
+indent_size = 2
+
+# Batch 脚本
+[*.bat]
+end_of_line = crlf
+
+# Makefile（必须使用 tab）
+[Makefile]
+indent_style = tab
+
+# Docker 文件
+[Dockerfile*]
+indent_size = 4
