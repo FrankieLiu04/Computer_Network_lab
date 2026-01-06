@@ -1,103 +1,105 @@
-# 贡献指南 | Contributing Guide
+# Contributing Guide
 
-感谢你对本项目的兴趣！以下是参与贡献的指南。
+[![中文](https://img.shields.io/badge/lang-中文-red.svg)](CONTRIBUTING.zh-CN.md)
 
-## 🌿 分支策略
+Thank you for your interest in contributing to this project! Here's how you can help.
 
-我们采用简化的 Git Flow 模型：
+## 🌿 Branching Strategy
 
-| 分支 | 用途 | 保护级别 |
-|------|------|----------|
-| `main` | 稳定发布版本 | 受保护，需要 PR |
-| `develop` | 开发集成分支 | 需要 PR |
-| `feature/*` | 新功能开发 | 个人分支 |
-| `bugfix/*` | Bug 修复 | 个人分支 |
+We use a simplified Git Flow model:
 
-### 分支命名规范
+| Branch | Purpose | Protection |
+|--------|---------|------------|
+| `main` | Stable releases | Protected, PR required |
+| `develop` | Development integration | PR required |
+| `feature/*` | New features | Personal branches |
+| `bugfix/*` | Bug fixes | Personal branches |
+
+### Branch Naming Convention
 
 ```
-feature/添加文件压缩功能
 feature/add-compression
-bugfix/修复连接超时问题
+feature/file-encryption
 bugfix/fix-connection-timeout
-docs/更新README
+bugfix/memory-leak-fix
+docs/update-readme
 ```
 
-## 📝 如何贡献
+## 📝 How to Contribute
 
 ### 1. Fork & Clone
 
 ```bash
-# Fork 本仓库后
-git clone https://github.com/你的用户名/Computer_Network_lab.git
+# After forking the repository
+git clone https://github.com/YOUR_USERNAME/Computer_Network_lab.git
 cd Computer_Network_lab
 git remote add upstream https://github.com/FrankieLiu04/Computer_Network_lab.git
 ```
 
-### 2. 创建功能分支
+### 2. Create a Feature Branch
 
 ```bash
 git checkout develop
 git pull upstream develop
-git checkout -b feature/你的功能名称
+git checkout -b feature/your-feature-name
 ```
 
-### 3. 开发 & 提交
+### 3. Develop & Commit
 
 ```bash
-# 进行开发...
+# Make your changes...
 git add .
-git commit -m "feat: 添加新功能描述"
+git commit -m "feat: add your feature description"
 ```
 
-#### Commit 消息规范
+#### Commit Message Convention
 
-我们使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
+We follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
-| 类型 | 说明 |
-|------|------|
-| `feat` | 新功能 |
-| `fix` | Bug 修复 |
-| `docs` | 文档更新 |
-| `style` | 代码格式（不影响逻辑） |
-| `refactor` | 重构 |
-| `test` | 测试相关 |
-| `chore` | 构建/工具变动 |
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation update |
+| `style` | Code style (no logic change) |
+| `refactor` | Code refactoring |
+| `test` | Test related |
+| `chore` | Build/tooling changes |
 
-示例：
+Examples:
 ```
-feat: 添加文件断点续传功能
-fix: 修复大文件传输时的内存溢出问题
-docs: 更新 Docker 部署文档
+feat: add resumable file upload
+fix: resolve memory overflow for large files
+docs: update Docker deployment guide
 ```
 
-### 4. 推送 & 创建 PR
+### 4. Push & Create PR
 
 ```bash
-git push origin feature/你的功能名称
+git push origin feature/your-feature-name
 ```
 
-然后在 GitHub 上创建 Pull Request，目标分支选择 `develop`。
+Then create a Pull Request on GitHub targeting the `develop` branch.
 
-## ✅ PR 检查清单
+## ✅ PR Checklist
 
-提交 PR 前请确认：
+Before submitting your PR, please verify:
 
-- [ ] 代码能够正常编译
-- [ ] 所有测试通过 (`ctest` 或 CI)
-- [ ] 遵循代码风格规范
-- [ ] 更新了相关文档（如需要）
-- [ ] Commit 消息符合规范
+- [ ] Code compiles successfully
+- [ ] All tests pass (`ctest` or CI)
+- [ ] Code follows style guidelines
+- [ ] Documentation updated (if needed)
+- [ ] Commit messages follow conventions
 
-## 🏗️ 本地开发环境
+## 🏗️ Development Environment
 
-### 依赖
+### Requirements
 
 - CMake 3.16+
-- C++17 兼容编译器
-- Docker（可选，用于容器化测试）
+- C++17 compatible compiler
+- Docker (optional, for containerized testing)
 
-### 构建
+### Build
 
 ```bash
 cd reliable-remote-backup-system
@@ -105,18 +107,18 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ```
 
-### 测试
+### Test
 
 ```bash
 cd build
 ctest --output-on-failure
 ```
 
-## 💬 寻求帮助
+## 💬 Getting Help
 
-- 有问题？创建 [Issue](https://github.com/FrankieLiu04/Computer_Network_lab/issues)
-- 想讨论？使用 Issue 的 `question` 标签
+- Questions? Create an [Issue](https://github.com/FrankieLiu04/Computer_Network_lab/issues)
+- Want to discuss? Use the `question` label
 
-## 📜 行为准则
+## 📜 Code of Conduct
 
-请阅读我们的 [行为准则](CODE_OF_CONDUCT.md)，确保友好、包容的协作环境。
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to maintain a friendly and inclusive environment.
