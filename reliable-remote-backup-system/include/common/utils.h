@@ -6,6 +6,12 @@
 #include <cstdint>
 #include <chrono>
 
+// Windows compatibility: Define ssize_t
+#ifdef _WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 namespace backup {
 namespace utils {
 

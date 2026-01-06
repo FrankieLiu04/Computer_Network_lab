@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#define NOMINMAX  // Prevent Windows.h from defining min/max macros
+#endif
+
 #include "server/server.h"
 #include "common/logger.h"
 #include "common/utils.h"
@@ -8,6 +12,7 @@
 #include <fstream>
 #include <cstring>
 #include <algorithm>
+#include <limits>
 
 #ifdef _WIN32
 #include <fcntl.h>

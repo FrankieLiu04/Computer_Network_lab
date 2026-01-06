@@ -1,0 +1,74 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "(gdb) Launch Server",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/backup-server",
+      "args": ["-port", "35887", "-http", "8080"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "CMake: Build (Debug)",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "logging": {
+        "engineLogging": false
+      }
+    },
+    {
+      "name": "(gdb) Launch Client",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/backup-client",
+      "args": ["127.0.0.1", "35887"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "CMake: Build (Debug)",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
+    {
+      "name": "(Windows) Launch Server",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Debug/backup-server.exe",
+      "args": ["-port", "35887", "-http", "8080"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "CMake: Build (Debug)"
+    },
+    {
+      "name": "(Windows) Launch Client",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Debug/backup-client.exe",
+      "args": ["127.0.0.1", "35887"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "CMake: Build (Debug)"
+    }
+  ]
+}

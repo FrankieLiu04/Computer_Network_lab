@@ -1,0 +1,24 @@
+# IDE 个人化配置
+.vscode/
+*.code-workspace
+
+# OS 文件
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# 构建产物（如果根目录构建）
+build/
+out/
+bin/
+dist/
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+*.temp

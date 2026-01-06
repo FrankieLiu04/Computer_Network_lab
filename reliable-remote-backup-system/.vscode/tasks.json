@@ -1,0 +1,127 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: Configure",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-B",
+        "${workspaceFolder}/build",
+        "-S",
+        "${workspaceFolder}",
+        "-DCMAKE_BUILD_TYPE=Debug"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: Build (Debug)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "${workspaceFolder}/build",
+        "--config",
+        "Debug",
+        "--parallel"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOn": ["CMake: Configure"],
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "CMake: Build (Release)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "${workspaceFolder}/build",
+        "--config",
+        "Release",
+        "--parallel"
+      ],
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "CMake: Test",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--test-dir",
+        "${workspaceFolder}/build",
+        "--output-on-failure"
+      ],
+      "group": "test",
+      "dependsOn": ["CMake: Build (Debug)"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Build & Run",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "up",
+        "--build",
+        "-d"
+      ],
+      "group": "none",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "down"
+      ],
+      "group": "none",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Integration Tests",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/scripts/integration_test.sh"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean Build Directory",
+      "type": "shell",
+      "command": "rm",
+      "args": [
+        "-rf",
+        "${workspaceFolder}/build"
+      ],
+      "windows": {
+        "command": "powershell",
+        "args": [
+          "-Command",
+          "Remove-Item",
+          "-Recurse",
+          "-Force",
+          "${workspaceFolder}/build",
+          "-ErrorAction",
+          "SilentlyContinue"
+        ]
+      },
+      "group": "none",
+      "problemMatcher": []
+    }
+  ]
+}

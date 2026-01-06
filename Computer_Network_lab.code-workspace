@@ -14,11 +14,17 @@
 			"**/.git": false,
 			"**/.DS_Store": true,
 			"**/node_modules": true,
-			"**/__pycache__": true
+			"**/__pycache__": true,
+			"**/build": true,
+			"**/out": true,
+			"**/_deps": true,
+			"**/CMakeFiles": true,
+			"**/.cmake": true
 		},
 		"search.exclude": {
 			"**/build": true,
-			"**/dist": true
+			"**/dist": true,
+			"**/_deps": true
 		},
 		"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 	},
