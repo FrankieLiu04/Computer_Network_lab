@@ -1,8 +1,10 @@
 # Reliable Remote Backup System
 
-[![CI](https://github.com/YOUR_USERNAME/reliable-remote-backup-system/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/reliable-remote-backup-system/actions/workflows/ci.yml)
+[![CI](https://github.com/FrankieLiu04/Computer_Network_lab/actions/workflows/ci.yml/badge.svg)](https://github.com/FrankieLiu04/Computer_Network_lab/actions/workflows/ci.yml)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-> 基于 UDP 命令通道 + TCP 数据通道的远程备份系统，实现文件列表/上传/删除/重命名/关停；增加 Web 管理台展示文件与性能指标，并支持 Docker 一键部署。
+> A reliable remote backup system using UDP command channel + TCP data channel. Features file listing, upload, delete, rename operations, plus a Web management dashboard with real-time metrics and Docker one-click deployment.
 
 ## 🎯 项目概述
 

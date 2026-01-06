@@ -1,5 +1,6 @@
 #include "common/utils.h"
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <sstream>
 #include <iomanip>
@@ -260,6 +261,27 @@ std::string formatBytes(uint64_t bytes) {
     } else {
         oss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
     }
+    return oss.str();
+}
+
+// =============================================================================
+// Request ID generation
+// =============================================================================
+
+std::string generateRequestId() {
+    static std::atomic<uint32_t> counter{0};
+    
+    // Combine timestamp + counter for uniqueness
+    auto now = std::chrono::steady_clock::now().time_since_epoch();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+    uint32_t cnt = counter.fetch_add(1, std::memory_order_relaxed);
+    
+    // Mix bits: lower 16 bits of timestamp + counter
+    uint32_t mixed = ((ms & 0xFFFF) << 16) | (cnt & 0xFFFF);
+    
+    // Format as 8-char hex
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0') << std::setw(8) << mixed;
     return oss.str();
 }
 

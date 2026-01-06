@@ -144,6 +144,18 @@ private:
  */
 std::string formatBytes(uint64_t bytes);
 
+// =============================================================================
+// Request ID generation
+// =============================================================================
+
+/**
+ * Generate a unique request ID for log correlation.
+ * Format: 8-character hex string (e.g., "a1b2c3d4")
+ * Thread-safe.
+ * @return Unique request ID
+ */
+std::string generateRequestId();
+
 }  // namespace utils
 }  // namespace backup
 
