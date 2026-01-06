@@ -2,6 +2,7 @@
 #include "common/logger.h"
 #include "common/utils.h"
 #include "common/file_utils.h"
+#include "common/metrics.h"
 
 #include <iostream>
 #include <fstream>
@@ -25,6 +26,11 @@ Server::Server(const ServerConfig& config)
 }
 
 Server::~Server() {
+    // Stop HTTP server first
+    if (httpServer_) {
+        httpServer_->stop();
+    }
+
     if (udpSocket_ != INVALID_SOCKET_VALUE) {
         closesocket(udpSocket_);
     }
@@ -92,6 +98,34 @@ ErrorCode Server::initialize() {
                  config_.backupDir);
     }
 
+    // Initialize HTTP server if enabled
+    if (config_.enableHttpServer) {
+        HttpServerConfig httpConfig;
+        httpConfig.port = config_.httpPort;
+        httpConfig.backupDir = config_.backupDir;
+        httpConfig.staticDir = config_.staticDir;
+        httpConfig.maxUploadSize = config_.maxFileSize;
+
+        httpServer_ = std::make_unique<HttpServer>(httpConfig);
+        
+        // Set up callbacks for file operations
+        httpServer_->setFileListCallback([this]() {
+            return file::listDirectory(config_.backupDir);
+        });
+        
+        httpServer_->setFileDeleteCallback([this](const std::string& filename) {
+            std::string filepath = utils::joinPath(config_.backupDir, filename);
+            return file::deleteFile(filepath);
+        });
+        
+        httpServer_->setFileRenameCallback([this](const std::string& oldName, 
+                                                   const std::string& newName) {
+            std::string oldPath = utils::joinPath(config_.backupDir, oldName);
+            std::string newPath = utils::joinPath(config_.backupDir, newName);
+            return file::renameFile(oldPath, newPath);
+        });
+    }
+
     LOG_INFO("Server initialized on UDP port {}", actualUdpPort_);
     return ErrorCode::SUCCESS;
 }
@@ -99,6 +133,16 @@ ErrorCode Server::initialize() {
 ErrorCode Server::run() {
     running_.store(true);
     state_ = ServerState::WAITING;
+
+    // Start HTTP server if enabled
+    if (httpServer_) {
+        if (httpServer_->start()) {
+            LOG_INFO("HTTP management server started on port {}", config_.httpPort);
+            std::cout << "HTTP management server @ http://0.0.0.0:" << config_.httpPort << std::endl;
+        } else {
+            LOG_ERROR("Failed to start HTTP management server");
+        }
+    }
 
     printBanner();
     printWaiting();
@@ -147,10 +191,17 @@ ErrorCode Server::run() {
             std::cout << "[CMD RECEIVED]: " << protocol::commandToString(cmdMsg.getCommand()) 
                       << std::endl;
 
+            // Record request metric
+            Metrics::instance().recordRequest(protocol::commandToString(cmdMsg.getCommand()));
+
             ErrorCode result = processCommand(cmdMsg, currentClientAddr_);
             if (result != ErrorCode::SUCCESS && 
                 cmdMsg.getCommand() != protocol::Command::SHUTDOWN) {
                 LOG_WARN("Command processing failed: {}", errorCodeToString(result));
+                // Record error metric
+                Metrics::instance().recordError(
+                    protocol::commandToString(cmdMsg.getCommand()),
+                    errorCodeToString(result));
             }
 
             if (state_ == ServerState::SHUTDOWN) {
@@ -160,6 +211,11 @@ ErrorCode Server::run() {
             state_ = ServerState::WAITING;
             printWaiting();
         }
+    }
+
+    // Stop HTTP server
+    if (httpServer_) {
+        httpServer_->stop();
     }
 
     running_.store(false);
@@ -391,6 +447,10 @@ ErrorCode Server::receiveSmallFile(const std::string& filepath, size_t filesize,
     file.write(dataMsg.data, filesize);
     file.close();
 
+    // Record transfer metrics
+    Metrics::instance().recordBytesReceived(filesize);
+    Metrics::instance().recordSendSession();
+
     std::cout << " - " << utils::getFilename(filepath) << " has been received." << std::endl;
     LOG_INFO("File '{}' received ({} bytes)", filepath, filesize);
 
@@ -493,6 +553,10 @@ ErrorCode Server::receiveLargeFile(const std::string& filepath, size_t filesize,
     file.close();
     closesocket(clientTcpSocket);
     closesocket(tcpSocket);
+
+    // Record transfer metrics
+    Metrics::instance().recordBytesReceived(totalBytes);
+    Metrics::instance().recordSendSession();
 
     std::cout << " - " << utils::getFilename(filepath) << " has been received." << std::endl;
     std::cout << " - send acknowledgemet." << std::endl;

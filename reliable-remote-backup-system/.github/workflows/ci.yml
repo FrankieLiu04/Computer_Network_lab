@@ -1,0 +1,220 @@
+# =============================================================================
+# GitHub Actions CI for Reliable Remote Backup System
+# =============================================================================
+# Triggers: push to main/develop, pull requests
+# Jobs: build, test, docker-build
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop, master]
+  pull_request:
+    branches: [main, develop, master]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # ===========================================================================
+  # Build and Test (Linux)
+  # ===========================================================================
+  build-linux:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git curl
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc)
+
+      - name: Run unit tests
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --verbose
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: |
+            build/backup-server
+            build/backup-client
+          retention-days: 7
+
+  # ===========================================================================
+  # Build (Windows)
+  # ===========================================================================
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
+
+      - name: Run unit tests
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --verbose
+
+  # ===========================================================================
+  # Docker Build Test
+  # ===========================================================================
+  docker-build:
+    runs-on: ubuntu-22.04
+    needs: build-linux
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build server image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: reliable-backup-server:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build client image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.client
+          push: false
+          tags: reliable-backup-client:test
+
+  # ===========================================================================
+  # Integration Test (HTTP API)
+  # ===========================================================================
+  integration-test:
+    runs-on: ubuntu-22.04
+    needs: build-linux
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+          path: build/
+
+      - name: Make binaries executable
+        run: chmod +x build/backup-server build/backup-client
+
+      - name: Create directories
+        run: mkdir -p backup static logs
+
+      - name: Copy static files
+        run: cp -r static/* static/ 2>/dev/null || true
+
+      - name: Start server
+        run: |
+          ./build/backup-server -port 35887 -http 8080 -backup ./backup -static ./static &
+          echo $! > server.pid
+          sleep 3
+
+      - name: Install test dependencies
+        run: sudo apt-get install -y curl jq
+
+      - name: Run health check
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/healthz | jq -e '.status == "ok"' > /dev/null; then
+              echo "Server is healthy"
+              exit 0
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 1
+          done
+          echo "Server health check failed"
+          exit 1
+
+      - name: Test API - Get files (empty)
+        run: |
+          response=$(curl -s http://localhost:8080/api/files)
+          echo "$response" | jq .
+          echo "$response" | jq -e '.success == true'
+
+      - name: Test API - Upload file
+        run: |
+          echo "Test content for integration" > test_file.txt
+          response=$(curl -s -F "file=@test_file.txt" http://localhost:8080/api/upload)
+          echo "$response" | jq .
+          echo "$response" | jq -e '.success == true'
+
+      - name: Test API - Get files (with uploaded file)
+        run: |
+          response=$(curl -s http://localhost:8080/api/files)
+          echo "$response" | jq .
+          echo "$response" | jq -e '.count > 0'
+
+      - name: Test API - Rename file
+        run: |
+          response=$(curl -s -X POST -H "Content-Type: application/json" \
+            -d '{"oldName": "test_file.txt", "newName": "renamed_file.txt"}' \
+            http://localhost:8080/api/rename)
+          echo "$response" | jq .
+          echo "$response" | jq -e '.success == true'
+
+      - name: Test API - Delete file
+        run: |
+          response=$(curl -s -X DELETE http://localhost:8080/api/files/renamed_file.txt)
+          echo "$response" | jq .
+          echo "$response" | jq -e '.success == true'
+
+      - name: Test API - Get metrics
+        run: |
+          response=$(curl -s http://localhost:8080/api/metrics)
+          echo "$response" | jq .
+          echo "$response" | jq -e '.uptime_seconds >= 0'
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) 2>/dev/null || true
+          fi
+
+  # ===========================================================================
+  # Code Quality (Optional)
+  # ===========================================================================
+  lint:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check file formatting
+        run: |
+          # Check for trailing whitespace in source files
+          if grep -rn '[[:blank:]]$' --include="*.cpp" --include="*.h" src/ include/; then
+            echo "::warning::Found trailing whitespace in source files"
+          fi
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          # List TODO/FIXME for visibility (not failing)
+          grep -rn 'TODO\|FIXME' --include="*.cpp" --include="*.h" src/ include/ || echo "No TODO/FIXME found"

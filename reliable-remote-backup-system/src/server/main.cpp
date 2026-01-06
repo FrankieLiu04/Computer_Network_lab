@@ -8,12 +8,15 @@ using namespace backup;
 using namespace backup::server;
 
 void printUsage(const char* programName) {
-    std::cout << "Usage: " << programName << " [-port <udp_port>] [-backup <dir>] [-log]" << std::endl;
+    std::cout << "Usage: " << programName << " [options]" << std::endl;
     std::cout << "Options:" << std::endl;
-    std::cout << "  -port <udp_port>  UDP port to listen on (default: auto-assign)" << std::endl;
-    std::cout << "  -backup <dir>     Backup directory (default: backup)" << std::endl;
-    std::cout << "  -log              Enable file logging" << std::endl;
-    std::cout << "  -help             Show this help message" << std::endl;
+    std::cout << "  -port <udp_port>    UDP port to listen on (default: auto-assign)" << std::endl;
+    std::cout << "  -http <http_port>   HTTP management port (default: 8080)" << std::endl;
+    std::cout << "  -backup <dir>       Backup directory (default: backup)" << std::endl;
+    std::cout << "  -static <dir>       Static files directory for web UI (default: static)" << std::endl;
+    std::cout << "  -no-http            Disable HTTP management server" << std::endl;
+    std::cout << "  -log                Enable file logging" << std::endl;
+    std::cout << "  -help               Show this help message" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -24,8 +27,14 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; i++) {
         if (std::strcmp(argv[i], "-port") == 0 && i + 1 < argc) {
             config.udpPort = static_cast<uint16_t>(std::atoi(argv[++i]));
+        } else if (std::strcmp(argv[i], "-http") == 0 && i + 1 < argc) {
+            config.httpPort = static_cast<uint16_t>(std::atoi(argv[++i]));
         } else if (std::strcmp(argv[i], "-backup") == 0 && i + 1 < argc) {
             config.backupDir = argv[++i];
+        } else if (std::strcmp(argv[i], "-static") == 0 && i + 1 < argc) {
+            config.staticDir = argv[++i];
+        } else if (std::strcmp(argv[i], "-no-http") == 0) {
+            config.enableHttpServer = false;
         } else if (std::strcmp(argv[i], "-log") == 0) {
             enableFileLog = true;
         } else if (std::strcmp(argv[i], "-help") == 0 || std::strcmp(argv[i], "--help") == 0) {

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/YOUR_USERNAME/reliable-remote-backup-system/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/reliable-remote-backup-system/actions/workflows/ci.yml)
 
-> 基于 UDP 命令通道 + TCP 数据通道的远程备份系统，实现文件列表/上传/删除/重命名/关停；支持 Docker 一键部署。
+> 基于 UDP 命令通道 + TCP 数据通道的远程备份系统，实现文件列表/上传/删除/重命名/关停；增加 Web 管理台展示文件与性能指标，并支持 Docker 一键部署。
 
 ## 🎯 项目概述
 
@@ -10,7 +10,8 @@
 
 - **UDP/TCP Socket 编程**：命令通道使用 UDP，大文件传输使用 TCP
 - **可靠性设计**：文件名校验、超时重试、显式握手
-- **可观测性**：结构化日志（spdlog）
+- **可观测性**：结构化日志（spdlog）、性能指标（Metrics）
+- **Web 管理台**：HTTP API + 前端界面，支持文件管理和性能监控
 - **工程化**：CMake 构建、单元测试（GoogleTest）、Docker 支持
 - **CI/CD**：GitHub Actions 自动化构建和测试
 
@@ -20,13 +21,17 @@
 reliable-remote-backup-system/
 ├── include/                    # 头文件
 │   ├── client/                 # 客户端头文件
-│   ├── common/                 # 公共模块头文件
+│   ├── common/                 # 公共模块头文件 (含 metrics.h)
 │   ├── protocol/               # 协议定义
-│   └── server/                 # 服务端头文件
+│   └── server/                 # 服务端头文件 (含 http_server.h)
 ├── src/                        # 源代码
 │   ├── client/                 # 客户端实现
-│   ├── common/                 # 公共模块实现
-│   └── server/                 # 服务端实现
+│   ├── common/                 # 公共模块实现 (含 metrics.cpp)
+│   └── server/                 # 服务端实现 (含 http_server.cpp)
+├── static/                     # Web 前端静态文件
+│   └── index.html              # 管理台界面
+├── scripts/                    # 脚本工具
+│   └── integration_test.sh     # HTTP API 集成测试
 ├── tests/                      # 单元测试
 ├── .github/workflows/          # GitHub Actions CI
 ├── CMakeLists.txt              # CMake 构建配置
@@ -65,8 +70,11 @@ ctest --output-on-failure
 
 **启动服务端：**
 ```bash
-./backup-server -port 35887
+./backup-server -port 35887 -http 8080
 ```
+
+**访问 Web 管理台：**
+打开浏览器访问 http://localhost:8080
 
 **启动客户端：**
 ```bash
@@ -128,11 +136,14 @@ Exiting client
 ### Server
 
 ```
-backup-server [-port <udp_port>] [-backup <dir>] [-log]
+backup-server [options]
 
 参数:
   -port <port>     UDP 监听端口 (默认: 自动分配)
+  -http <port>     HTTP 管理端口 (默认: 8080)
   -backup <dir>    备份目录 (默认: backup)
+  -static <dir>    静态文件目录 (默认: static)
+  -no-http         禁用 HTTP 管理服务
   -log             启用文件日志
   -help            显示帮助信息
 ```
@@ -185,10 +196,43 @@ ctest --output-on-failure
 |------|------|------|
 | 35887 | UDP | 命令通道 |
 | 40000-40010 | TCP | 文件传输 |
+| 8080 | TCP | HTTP 管理台 / API |
+
+## 🌐 HTTP API
+
+| 端点 | 方法 | 描述 |
+|------|------|------|
+| `/healthz` | GET | 健康检查 |
+| `/api/files` | GET | 获取文件列表 |
+| `/api/upload` | POST | 上传文件 (multipart/form-data) |
+| `/api/files/{name}` | DELETE | 删除文件 |
+| `/api/rename` | POST | 重命名文件 |
+| `/api/metrics` | GET | 获取性能指标 |
+
+### Metrics 示例响应
+
+```json
+{
+  "uptime_seconds": 3600,
+  "requests": {
+    "total": { "ls": 10, "send": 5, "remove": 2 },
+    "http_total": 100
+  },
+  "transfer": {
+    "bytes_received": 1048576,
+    "bytes_sent": 0,
+    "send_sessions": 5,
+    "send_failures": 0
+  },
+  "latency": {
+    "send": { "avg_ms": 150.5, "max_ms": 500.0, "p95_ms": 300.0 }
+  }
+}
+```
 
 ## 📈 项目演进
 
-### 阶段一 (当前) - 工程化底座
+### 阶段一 ✅ - 工程化底座
 - [x] C++17 + CMake 构建
 - [x] spdlog 日志
 - [x] GoogleTest 单元测试
@@ -197,15 +241,20 @@ ctest --output-on-failure
 - [x] 文件名安全校验
 - [x] rename 时序修复（显式握手）
 
-### 阶段二 (计划中) - Web 管理台
-- [ ] HTTP API (`/api/files`, `/api/metrics`)
-- [ ] Web 文件管理界面
-- [ ] 性能指标展示
+### 阶段二 ✅ - Web 管理台 + 可观测性
+- [x] HTTP API (`/api/files`, `/api/metrics`, `/api/upload`, etc.)
+- [x] Web 文件管理界面（上传/删除/重命名）
+- [x] 性能指标收集（Metrics）
+- [x] 指标展示（请求数、错误数、吞吐量、延迟）
+- [x] 健康检查端点 (`/healthz`)
+- [x] Docker Compose HTTP 端口暴露
+- [x] 集成测试脚本
 
 ### 阶段三 (计划中) - 高级特性
-- [ ] Prometheus 指标导出
-- [ ] 并发传输支持
-- [ ] 压测与扰动测试
+- [ ] Prometheus 指标导出 (`/metrics` text format)
+- [ ] 并发传输支持（线程池）
+- [ ] 压测与扰动测试 (`tc netem`)
+- [ ] GitHub Release 自动发布
 
 ## 📄 协议格式
 

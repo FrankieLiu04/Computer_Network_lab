@@ -3,9 +3,11 @@
 
 #include "protocol/message.h"
 #include "common/error_codes.h"
+#include "server/http_server.h"
 #include <string>
 #include <atomic>
 #include <functional>
+#include <memory>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -40,10 +42,13 @@ enum class ServerState {
 struct ServerConfig {
     uint16_t udpPort = 0;           // UDP command port (0 = auto assign)
     uint16_t tcpPort = 40000;       // Base TCP port for file transfers
+    uint16_t httpPort = 8080;       // HTTP management port
     std::string backupDir = "backup";  // Backup directory
+    std::string staticDir = "static";  // Static files directory for web UI
     int recvTimeoutMs = 5000;       // Receive timeout in milliseconds
     size_t maxFileSize = 100 * 1024 * 1024;  // 100 MB max file size
     bool enableHandshake = true;    // Enable explicit handshake for rename
+    bool enableHttpServer = true;   // Enable HTTP management server
 };
 
 // Forward declaration
@@ -99,6 +104,18 @@ public:
      */
     uint16_t getCurrentTcpPort() const { return currentTcpPort_; }
 
+    /**
+     * Get the HTTP server port.
+     * @return HTTP port number
+     */
+    uint16_t getHttpPort() const { return config_.httpPort; }
+
+    /**
+     * Get the backup directory path.
+     * @return Backup directory path
+     */
+    const std::string& getBackupDir() const { return config_.backupDir; }
+
 private:
     // Process incoming UDP command
     ErrorCode processCommand(const protocol::CmdMsg& cmd, 
@@ -146,6 +163,9 @@ private:
     std::atomic<bool> running_{false};
     std::atomic<bool> shutdownRequested_{false};
     ServerState state_ = ServerState::WAITING;
+
+    // HTTP server for web management
+    std::unique_ptr<HttpServer> httpServer_;
 
 #ifdef _WIN32
     bool wsaInitialized_ = false;

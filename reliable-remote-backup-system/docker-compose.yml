@@ -25,19 +25,23 @@ services:
       - "35887:35887/udp"
       # TCP file transfer ports
       - "40000-40010:40000-40010/tcp"
+      # HTTP management port (Web UI + API)
+      - "8080:8080/tcp"
     volumes:
       # Persistent backup storage
       - backup-data:/app/backup
       # Logs (optional, for debugging)
       - backup-logs:/app/logs
+      # Static files for web UI
+      - ./static:/app/static:ro
     environment:
       - TZ=Asia/Hong_Kong
     restart: unless-stopped
     networks:
       - backup-network
     healthcheck:
-      # Simple health check - verify process is running
-      test: ["CMD-SHELL", "pgrep -x backup-server || exit 1"]
+      # Use HTTP health endpoint for more reliable health check
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

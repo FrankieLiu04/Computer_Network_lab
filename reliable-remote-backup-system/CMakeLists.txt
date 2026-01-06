@@ -41,13 +41,21 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
-# nlohmann/json for JSON support (will be used in Phase B)
+# nlohmann/json for JSON support
 FetchContent_Declare(
     json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
     GIT_TAG v3.11.2
 )
 FetchContent_MakeAvailable(json)
+
+# cpp-httplib for HTTP server (Phase B)
+FetchContent_Declare(
+    httplib
+    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
+    GIT_TAG v0.14.3
+)
+FetchContent_MakeAvailable(httplib)
 
 # GoogleTest for unit testing
 FetchContent_Declare(
@@ -67,6 +75,7 @@ add_library(common STATIC
     src/common/error_codes.cpp
     src/common/file_utils.cpp
     src/common/logger.cpp
+    src/common/metrics.cpp
 )
 target_include_directories(common PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(common PUBLIC spdlog::spdlog)
@@ -78,8 +87,9 @@ add_executable(backup-server
     src/server/main.cpp
     src/server/server.cpp
     src/server/command_handler.cpp
+    src/server/http_server.cpp
 )
-target_link_libraries(backup-server PRIVATE common spdlog::spdlog)
+target_link_libraries(backup-server PRIVATE common spdlog::spdlog nlohmann_json::nlohmann_json httplib::httplib)
 
 # Platform-specific libraries
 if(WIN32)
@@ -109,6 +119,7 @@ add_executable(unit_tests
     tests/test_utils.cpp
     tests/test_protocol.cpp
     tests/test_error_codes.cpp
+    tests/test_metrics.cpp
 )
 target_link_libraries(unit_tests PRIVATE 
     common 
@@ -126,6 +137,14 @@ gtest_discover_tests(unit_tests)
 install(TARGETS backup-server backup-client
     RUNTIME DESTINATION bin
 )
+
+# Install static files for web UI
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/static/
+    DESTINATION share/${PROJECT_NAME}/static
+)
+
+# Copy static files to build directory for development
+file(COPY ${CMAKE_SOURCE_DIR}/static DESTINATION ${CMAKE_BINARY_DIR})
 
 # =============================================================================
 # CPack Configuration (optional packaging)
